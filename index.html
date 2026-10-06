@@ -89,7 +89,6 @@
     </main>
 
     <script>
-        // Инициализация Telegram
         if (window.Telegram && window.Telegram.WebApp) {
             try {
                 window.Telegram.WebApp.expand();
@@ -97,7 +96,6 @@
             } catch (e) { console.log("Браузерный режим"); }
         }
 
-        // Анимация Матрицы
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         let width, height, columns;
@@ -131,11 +129,10 @@
         window.addEventListener('resize', initMatrix);
         setInterval(drawMatrix, 33);
 
-        // Настройки сети
         const PROXY_URL_HIDDEN = "https://throbbing-fire-14de.nikita-tkachen2002.workers.dev/";
         
-        // ВАЖНО: Сюда мы впишем ссылку на Cloudflare Worker твоего бота
-        const BOT_BACKEND_URL = "https://ТВОЙ_АДРЕС_БОТА.workers.dev/send-media"; 
+        // Вставь сюда ссылку на твой Cloudflare Worker (без слеша на конце)
+        const BOT_BACKEND_URL = "https://matrix-bot-server.nikita-tkachen2002.workers.dev"; 
 
         const form = document.getElementById('extractForm');
         const urlInput = document.getElementById('urlInput');
@@ -171,20 +168,18 @@
             }
         }
 
-        // Новая логика отправки данных боту
+        // Функция отправки ссылки на бэкенд бота
         async function sendToTelegramBot(mediaUrl, isVideo) {
             try {
-                addLog(`PREPARING TELEGRAM BOT DELIVERY...`);
+                addLog(`SENDING MEDIA TO TELEGRAM BOT SERVER...`);
                 
-                // Получаем ID пользователя, который открыл мини-апп
                 const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
                 if (!tgUser || !tgUser.id) {
-                    throw new Error("TELEGRAM USER ID NOT DETECTED. ARE YOU IN THE APP?");
+                    throw new Error("TELEGRAM USER ID NOT DETECTED. OPEN INSIDE TELEGRAM!");
                 }
 
-                addLog(`ROUTING TO BOT SERVER FOR USER ID: ${tgUser.id}...`);
+                addLog(`TARGET CHAT ID: ${tgUser.id}`);
 
-                // Отправляем данные на сервер бота
                 const response = await fetch(BOT_BACKEND_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -195,18 +190,22 @@
                     })
                 });
 
-                if (!response.ok) throw new Error("BOT SERVER DID NOT RESPOND CORRECTLY.");
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || "Server rejected request");
+                }
 
-                addLog(`SUCCESS: BOT IS SENDING THE FILE TO YOUR CHAT.`);
+                addLog(`SUCCESS: FILE SENT TO YOUR TELEGRAM BOT!`);
                 
                 // Закрываем мини-апп через 2 секунды после успеха
-                setTimeout(() => { window.Telegram.WebApp.close(); }, 2000);
+                setTimeout(() => { 
+                    if (window.Telegram?.WebApp?.close) {
+                        window.Telegram.WebApp.close(); 
+                    }
+                }, 2000);
 
             } catch (error) {
                 addLog(`BOT DELIVERY FAILED: ${error.message}`);
-                // Возврат к стандартному открытию ссылки, если сервер не сработал
-                addLog(`FALLBACK: ROUTING TO NEW TAB...`);
-                window.open(mediaUrl, '_blank');
             }
         }
 
@@ -231,14 +230,13 @@
                 const response = await fetch(fetchUrl, { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
                 if (!response.ok) throw new Error(`PROXY REJECTED CONNECTION: ${response.status}`);
 
-                addLog(`PAYLOAD RECEIVED. UNESCAPING JSON DATA...`);
+                addLog(`PAYLOAD RECEIVED. PARSING DATA...`);
                 const htmlText = await response.text();
                 const cleanHtml = htmlText.replace(/\\u002F/g, '/').replace(/\\\//g, '/');
                 
                 let mediaUrl = null;
                 let isVideo = false;
 
-                addLog(`SCANNING FOR ENCRYPTED .MP4 STREAMS...`);
                 const mp4Matches = cleanHtml.match(/https:\/\/[^"'\s>]+\.mp4[^"'\s>]*/g);
                 
                 if (mp4Matches && mp4Matches.length > 0) {
@@ -248,7 +246,7 @@
                     isVideo = true;
                     addLog(`SUCCESS: VIDEO STREAM ISOLATED.`);
                 } else {
-                    addLog(`NO VIDEO FOUND. FALLING BACK TO IMAGE EXTRACTION...`);
+                    addLog(`FALLING BACK TO IMAGE EXTRACTION...`);
                     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
                     const ogImage = doc.querySelector('meta[property="og:image"]');
                     if (ogImage) {
@@ -266,7 +264,9 @@
 
                 if (!mediaUrl) throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
 
-                // Запускаем функцию отправки боту
+                addLog(`TARGET MEDIA URL: ${mediaUrl}`);
+                
+                // Передаем ссылку на сервер бота вместо открытия вкладки
                 await sendToTelegramBot(mediaUrl, isVideo);
 
             } catch (error) {
