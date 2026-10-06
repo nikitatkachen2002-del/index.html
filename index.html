@@ -1,19 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Блокируем масштабирование для мобильных устройств, чтобы приложение вело себя нативно -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MATRIX PINTEREST EXTRACTOR</title>
     
     <!-- Подключаем библиотеку Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <!-- Подключаем Tailwind CSS для стилей -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
-    <!-- Настройка цветовой палитры "Матрицы" -->
     <script>
         tailwind.config = {
             theme: {
@@ -56,48 +52,15 @@
             z-index: -1;
         }
 
-        /* Кастомный скроллбар для терминала */
         .terminal-scroll::-webkit-scrollbar { width: 8px; }
         .terminal-scroll::-webkit-scrollbar-track { background: rgba(0, 20, 0, 0.8); border-left: 1px solid #00FF41; }
         .terminal-scroll::-webkit-scrollbar-thumb { background: rgba(0, 255, 65, 0.3); }
         .terminal-scroll::-webkit-scrollbar-thumb:hover { background: #00FF41; }
 
-        /* Убираем белый фон у автозаполнения в полях ввода */
         input:-webkit-autofill,
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus, 
         input:-webkit-autofill:active{
             -webkit-box-shadow: 0 0 0 30px black inset !important;
             -webkit-text-fill-color: #00FF41 !important;
-            transition: background-color 5000s ease-in-out 0s;
-        }
-
-        /* Анимация глитча для заголовка */
-        .glitch-anim {
-            animation: textGlitch 2s infinite;
-        }
-
-        @keyframes textGlitch {
-            0% { opacity: 1; }
-            95% { opacity: 1; }
-            96% { opacity: 0.8; transform: translate(-2px, 1px); }
-            97% { opacity: 0.9; transform: translate(2px, -1px); }
-            98% { opacity: 1; transform: translate(0, 0); }
-            100% { opacity: 1; }
-        }
-    </style>
-</head>
-<!-- Центрируем контент по вертикали и горизонтали -->
-<body class="min-h-screen flex items-center justify-center p-4">
-    
-    <!-- Холст для эффекта падающего кода -->
-    <canvas id="matrix-canvas"></canvas>
-
-    <!-- Основной контейнер приложения -->
-    <main class="w-full max-w-4xl bg-matrix-black/80 backdrop-blur-sm border border-matrix-green shadow-neon p-6 flex flex-col gap-6 relative z-10 my-auto">
-        
-        <header class="border-b border-matrix-green/50 pb-4 text-center sm:text-left">
-            <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
-                MATRIX PINTEREST EXTRACTOR
-            </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM
+            transition: background-color 5000
