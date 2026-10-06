@@ -1,13 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Блокируем масштабирование для мобильных устройств, чтобы приложение вело себя нативно -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MATRIX PINTEREST EXTRACTOR</title>
     
+    <!-- Подключаем библиотеку Telegram Web App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Подключаем Tailwind CSS для стилей -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
+    <!-- Настройка цветовой палитры "Матрицы" -->
     <script>
         tailwind.config = {
             theme: {
@@ -50,12 +56,13 @@
             z-index: -1;
         }
 
-        /* Terminal Scrollbar */
+        /* Кастомный скроллбар для терминала */
         .terminal-scroll::-webkit-scrollbar { width: 8px; }
         .terminal-scroll::-webkit-scrollbar-track { background: rgba(0, 20, 0, 0.8); border-left: 1px solid #00FF41; }
         .terminal-scroll::-webkit-scrollbar-thumb { background: rgba(0, 255, 65, 0.3); }
         .terminal-scroll::-webkit-scrollbar-thumb:hover { background: #00FF41; }
 
+        /* Убираем белый фон у автозаполнения в полях ввода */
         input:-webkit-autofill,
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus, 
@@ -65,6 +72,7 @@
             transition: background-color 5000s ease-in-out 0s;
         }
 
+        /* Анимация глитча для заголовка */
         .glitch-anim {
             animation: textGlitch 2s infinite;
         }
@@ -79,288 +87,17 @@
         }
     </style>
 </head>
+<!-- Центрируем контент по вертикали и горизонтали -->
 <body class="min-h-screen flex items-center justify-center p-4">
     
-    <!-- Background Canvas -->
+    <!-- Холст для эффекта падающего кода -->
     <canvas id="matrix-canvas"></canvas>
 
-    <!-- Main Application Container -->
-    <main class="w-full max-w-4xl bg-matrix-black/80 backdrop-blur-sm border border-matrix-green shadow-neon p-6 flex flex-col gap-6 relative z-10">
+    <!-- Основной контейнер приложения -->
+    <main class="w-full max-w-4xl bg-matrix-black/80 backdrop-blur-sm border border-matrix-green shadow-neon p-6 flex flex-col gap-6 relative z-10 my-auto">
         
-        <!-- Header -->
         <header class="border-b border-matrix-green/50 pb-4 text-center sm:text-left">
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: BLOB_EXPORT_PROXY</p>
-        </header>
-
-        <!-- Input Form -->
-        <form id="extractForm" class="flex flex-col gap-5">
-            
-            <div class="flex flex-col gap-2">
-                <label for="proxyInput" class="text-sm font-bold tracking-widest text-matrix-light">
-                    > PROXY_NODE_URL
-                </label>
-                <input type="url" id="proxyInput" required
-                    class="block w-full px-4 py-3 bg-black border border-matrix-green text-matrix-green focus:outline-none focus:shadow-neon-strong transition-all"
-                    value="https://throbbing-fire-14de.nikita-tkachen2002.workers.dev/">
-            </div>
-
-            <div class="flex flex-col gap-2">
-                <label for="urlInput" class="text-sm font-bold tracking-widest text-matrix-light">
-                    > TARGET_PINTEREST_URL
-                </label>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <input type="url" id="urlInput" required
-                        class="block w-full flex-1 px-4 py-3 bg-black border border-matrix-green text-matrix-green focus:outline-none focus:shadow-neon-strong transition-all"
-                        placeholder="https://pin.it/..." autocomplete="off">
-                    
-                    <button type="submit" id="submitBtn" class="bg-black border border-matrix-green text-matrix-green hover:bg-matrix-green hover:text-black font-bold py-3 px-8 transition-all shadow-neon whitespace-nowrap uppercase tracking-widest cursor-pointer">
-                        INITIATE_EXTRACTION
-                    </button>
-                </div>
-            </div>
-        </form>
-
-        <!-- Terminal Output -->
-        <section class="flex flex-col border border-matrix-green h-64 sm:h-80 bg-black/90 relative">
-            <div class="flex items-center justify-between px-4 py-2 border-b border-matrix-green/50 bg-matrix-green/10">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-matrix-light">Extraction_Logs</h3>
-                <span class="text-xs animate-pulse text-matrix-green">_ONLINE</span>
-            </div>
-            <div id="terminal" class="flex-1 overflow-y-auto terminal-scroll text-xs sm:text-sm p-4 space-y-1">
-                <div class="text-matrix-green/70">> SYSTEM INITIALIZED...</div>
-                <div class="text-matrix-green/70">> AWAITING TARGET PARAMETERS...</div>
-            </div>
-        </section>
-
-    </main>
-
-    <script>
-        // Matrix Digital Rain Logic
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width, height;
-        let columns;
-        const drops = [];
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split('');
-
-        function initMatrix() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            
-            const fontSize = window.innerWidth < 600 ? 12 : 16;
-            columns = width / fontSize;
-            
-            drops.length = 0; // Reset
-            for (let x = 0; x < columns; x++) {
-                drops[x] = Math.random() * -100; // Start at random positions above screen
-            }
-            ctx.font = fontSize + 'px "Share Tech Mono"';
-        }
-
-        function drawMatrix() {
-            // Translucent black background creates the trail effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, width, height);
-
-            ctx.fillStyle = '#0F0';
-            
-            const fontSize = window.innerWidth < 600 ? 12 : 16;
-            ctx.font = fontSize + 'px "Share Tech Mono"';
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-        }
-
-        initMatrix();
-        window.addEventListener('resize', initMatrix);
-        setInterval(drawMatrix, 33);
-
-        
-        // DOM Elements
-        const form = document.getElementById('extractForm');
-        const proxyInput = document.getElementById('proxyInput');
-        const urlInput = document.getElementById('urlInput');
-        const submitBtn = document.getElementById('submitBtn');
-        const terminal = document.getElementById('terminal');
-
-        function addLog(message) {
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-            const line = document.createElement('div');
-            
-            // Highlight errors in red-ish tone or keep matrix logic
-            if (message.includes("ERROR") || message.includes("FAILED")) {
-                line.className = 'text-red-500 break-words';
-                line.innerHTML = `<span class="opacity-50">[${time}]</span> <span class="font-bold">!! ${message}</span>`;
-            } else if (message.includes("SUCCESS")) {
-                line.className = 'text-white font-bold drop-shadow-[0_0_2px_#fff] break-words';
-                line.innerHTML = `<span class="text-matrix-green opacity-50">[${time}]</span> > ${message}`;
-            } else {
-                line.className = 'text-matrix-green break-words';
-                line.innerHTML = `<span class="opacity-50">[${time}]</span> > ${message}`;
-            }
-            
-            terminal.appendChild(line);
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        // Logic to reliably build proxy url
-        function buildProxyUrl(proxyBase, targetUrl) {
-            try {
-                let urlObj = new URL(proxyBase);
-                urlObj.searchParams.set('url', targetUrl);
-                return urlObj.toString();
-            } catch (err) {
-                let base = proxyBase.trim();
-                if (!base.includes('?')) {
-                    if (!base.endsWith('/')) base += '/';
-                    base += '?url=';
-                } else {
-                    if (!base.endsWith('&') && !base.endsWith('?')) base += '&url=';
-                }
-                return base + encodeURIComponent(targetUrl);
-            }
-        }
-
-        async function triggerDownload(mediaUrl, activeProxy, isVideo) {
-            try {
-                addLog(`INITIATING BLOB DOWNLOAD VIA PROXY...`);
-                const fetchUrl = buildProxyUrl(activeProxy, mediaUrl);
-                addLog(`ROUTING: ${fetchUrl}`);
-
-                const response = await fetch(fetchUrl);
-                
-                if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-                
-                addLog(`STREAM RECEIVED. ASSEMBLING BLOB...`);
-                const blob = await response.blob();
-                const sizeMB = (blob.size / (1024*1024)).toFixed(2);
-                addLog(`BLOB CONSTRUCTED: ${sizeMB} MB`);
-                
-                const objectUrl = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = objectUrl;
-                
-                const ext = isVideo ? 'mp4' : 'jpg';
-                const filename = `matrix_extract_${Date.now()}.${ext}`;
-                link.download = filename;
-                
-                document.body.appendChild(link);
-                link.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(objectUrl);
-                    addLog(`SUCCESS: FILE SAVED AS ${filename}. MEMORY FLUSHED.`);
-                }, 1000);
-
-            } catch (error) {
-                addLog(`DOWNLOAD FAILED: ${error.message}`);
-            }
-        }
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const pUrl = proxyInput.value.trim();
-            const targetUrl = urlInput.value.trim();
-            
-            if (!pUrl || !targetUrl) return;
-
-            terminal.innerHTML = '';
-            addLog(`SYSTEM WAKE. TARGET: ${targetUrl}`);
-            
-            const origBtnText = submitBtn.innerHTML;
-            submitBtn.innerHTML = `PROCESSING...`;
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-50');
-
-            try {
-                const fetchUrl = buildProxyUrl(pUrl, targetUrl);
-                addLog(`FETCHING PAYLOAD VIA PROXY NODE...`);
-                
-                const response = await fetch(fetchUrl, {
-                    method: 'GET',
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
-
-                if (!response.ok) throw new Error(`PROXY REJECTED CONNECTION: ${response.status}`);
-
-                addLog(`PAYLOAD RECEIVED. UNESCAPING JSON DATA...`);
-                const htmlText = await response.text();
-                
-                // 1. Unescape JSON slashes
-                const cleanHtml = htmlText.replace(/\\u002F/g, '/').replace(/\\\//g, '/');
-                
-                let mediaUrl = null;
-                let isVideo = false;
-
-                // 2. Parse for mp4
-                addLog(`SCANNING FOR ENCRYPTED .MP4 STREAMS...`);
-                const mp4Matches = cleanHtml.match(/https:\/\/[^"'\s>]+\.mp4[^"'\s>]*/g);
-                
-                if (mp4Matches && mp4Matches.length > 0) {
-                    const uniqueMp4s = [...new Set(mp4Matches)];
-                    
-                    // Prioritize highest resolution
-                    let bestVideo = uniqueMp4s.find(url => url.includes('1080p')) || 
-                                    uniqueMp4s.find(url => url.includes('720p')) || 
-                                    uniqueMp4s.find(url => url.includes('480p')) ||
-                                    uniqueMp4s[0];
-                                    
-                    mediaUrl = bestVideo.split(/[\\]/)[0].split('?')[0];
-                    isVideo = true;
-                    addLog(`SUCCESS: VIDEO STREAM ISOLATED.`);
-                } else {
-                    addLog(`NO VIDEO FOUND. FALLING BACK TO IMAGE EXTRACTION...`);
-                    
-                    // Fallback to OpenGraph meta tag
-                    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-                    const ogImage = doc.querySelector('meta[property="og:image"]');
-                    
-                    if (ogImage) {
-                        // Upgrade resolution to originals
-                        mediaUrl = ogImage.content.replace(/\/\d+x\//, '/originals/');
-                        addLog(`SUCCESS: HIGH-RES IMAGE LOCATED.`);
-                    } else {
-                        // Regex fallback for images
-                        const imgMatches = cleanHtml.match(/https:\/\/[^"'\s>]+\.(jpg|jpeg|png)/gi);
-                        if (imgMatches && imgMatches.length > 0) {
-                            const uniqueImgs = [...new Set(imgMatches)];
-                            let bestImg = uniqueImgs.find(url => url.includes('/originals/')) || uniqueImgs[0];
-                            mediaUrl = bestImg.split(/[\\]/)[0].split('?')[0];
-                            addLog(`SUCCESS: RAW IMAGE LOCATED.`);
-                        }
-                    }
-                }
-
-                if (!mediaUrl) {
-                    throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
-                }
-
-                addLog(`TARGET MEDIA URL: ${mediaUrl}`);
-                
-                // Trigger auto download
-                await triggerDownload(mediaUrl, pUrl, isVideo);
-
-            } catch (error) {
-                addLog(`CRITICAL ERROR: ${error.message}`);
-            } finally {
-                submitBtn.innerHTML = origBtnText;
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50');
-            }
-        });
-    </script>
-</body>
-</html>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM
