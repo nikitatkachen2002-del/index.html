@@ -58,10 +58,9 @@
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: NO_CLOSE_STABLE_MODE</p>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: REDIRECT_RESOLVER_MODE</p>
         </header>
 
-        <!-- Заменили тег <form> на обычный блок, чтобы исключить случайное закрытие -->
         <div id="extractForm" class="flex flex-col gap-5">
             <div class="flex flex-col gap-2">
                 <label for="urlInput" class="text-sm font-bold tracking-widest text-matrix-light">> TARGET_PINTEREST_URL</label>
@@ -77,7 +76,6 @@
             </div>
         </div>
 
-        <!-- Контейнер для динамической кнопки скачивания -->
         <div id="resultContainer" class="hidden flex flex-col gap-2"></div>
 
         <section class="flex flex-col border border-matrix-green h-64 sm:h-80 bg-black/90 relative">
@@ -169,7 +167,6 @@
             }
         }
 
-        // Обработчик клика по обычной кнопке (вместо submit у формы)
         submitBtn.addEventListener('click', async () => {
             const pUrl = PROXY_URL_HIDDEN; 
             const targetUrl = urlInput.value.trim();
@@ -191,7 +188,7 @@
 
             try {
                 const fetchUrl = buildProxyUrl(pUrl, targetUrl);
-                addLog(`FETCHING PAYLOAD VIA PROXY NODE...`);
+                addLog(`RESOLVING REDIRECTS & FETCHING PAYLOAD...`);
                 
                 const response = await fetch(fetchUrl, { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
                 if (!response.ok) throw new Error(`PROXY REJECTED CONNECTION: ${response.status}`);
@@ -231,7 +228,6 @@
                 addLog(`TARGET MEDIA URL SECURED.`);
                 addLog(`READY FOR EXPORT.`);
 
-                // Рисуем кнопку прямо в интерфейсе
                 resultContainer.innerHTML = `
                     <button type="button" id="downloadBtn" class="w-full bg-matrix-green text-black font-bold py-3 px-6 uppercase tracking-widest shadow-neon hover:bg-white transition-all cursor-pointer text-center">
                         > ОТКРЫТЬ И СКАЧАТЬ ФАЙЛ <
