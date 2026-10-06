@@ -95,15 +95,7 @@
 
         <form id="extractForm" class="flex flex-col gap-5">
             
-            <div class="flex flex-col gap-2">
-                <label for="proxyInput" class="text-sm font-bold tracking-widest text-matrix-light">
-                    > PROXY_NODE_URL
-                </label>
-                <input type="url" id="proxyInput" required
-                    class="block w-full px-4 py-3 bg-black border border-matrix-green text-matrix-green focus:outline-none focus:shadow-neon-strong transition-all"
-                    value="https://throbbing-fire-14de.nikita-tkachen2002.workers.dev/">
-            </div>
-
+            <!-- Поле ввода Proxy удалено. Пользователь видит только поле для ссылки Pinterest -->
             <div class="flex flex-col gap-2">
                 <label for="urlInput" class="text-sm font-bold tracking-widest text-matrix-light">
                     > TARGET_PINTEREST_URL
@@ -135,10 +127,8 @@
 
     <script>
         // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
-        // Проверяем, загрузился ли объект Telegram и находимся ли мы в интерфейсе приложения
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
-            // Команды интерфейса вызываются только если мы внутри Telegram
             try {
                 tg.expand();
                 tg.ready();
@@ -194,8 +184,11 @@
         window.addEventListener('resize', initMatrix);
         setInterval(drawMatrix, 33);
 
+        // --- НАСТРОЙКИ ПРИЛОЖЕНИЯ ---
+        // Скрываем прокси URL здесь. Пользователь его не видит.
+        const PROXY_URL_HIDDEN = "https://throbbing-fire-14de.nikita-tkachen2002.workers.dev/";
+
         const form = document.getElementById('extractForm');
-        const proxyInput = document.getElementById('proxyInput');
         const urlInput = document.getElementById('urlInput');
         const submitBtn = document.getElementById('submitBtn');
         const terminal = document.getElementById('terminal');
@@ -240,14 +233,11 @@
             try {
                 addLog(`TARGET MEDIA IS READY FOR EXPORT...`);
                 
-                // Проверяем, запущен ли скрипт в Telegram и доступен ли метод openLink
                 if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
                     addLog(`ROUTING TO EXTERNAL BROWSER VIA TELEGRAM API...`);
-                    // Открываем внешнюю ссылку через инструмент Telegram
                     window.Telegram.WebApp.openLink(mediaUrl);
                 } else {
                     addLog(`ROUTING TO NEW TAB (BROWSER MODE)...`);
-                    // Если тестируем в обычном браузере
                     window.open(mediaUrl, '_blank');
                 }
                 
@@ -261,10 +251,11 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const pUrl = proxyInput.value.trim();
+            // Берем прокси из нашей скрытой переменной, а не из поля ввода
+            const pUrl = PROXY_URL_HIDDEN; 
             const targetUrl = urlInput.value.trim();
             
-            if (!pUrl || !targetUrl) return;
+            if (!targetUrl) return;
 
             terminal.innerHTML = '';
             addLog(`SYSTEM WAKE. TARGET: ${targetUrl}`);
