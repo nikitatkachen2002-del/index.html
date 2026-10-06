@@ -58,7 +58,7 @@
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: REDIRECT_RESOLVER_MODE</p>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: ULTIMATE_STABLE_EDITION</p>
         </header>
 
         <div id="extractForm" class="flex flex-col gap-5">
@@ -76,6 +76,7 @@
             </div>
         </div>
 
+        <!-- Контейнер для появления кнопки скачивания -->
         <div id="resultContainer" class="hidden flex flex-col gap-2"></div>
 
         <section class="flex flex-col border border-matrix-green h-64 sm:h-80 bg-black/90 relative">
@@ -131,7 +132,8 @@
         window.addEventListener('resize', initMatrix);
         setInterval(drawMatrix, 33);
 
-        const PROXY_URL_HIDDEN = "https://icy-shape-e24a.nikita-tkachen2002.workers.dev";
+        // --- ВАЖНО: Укажи здесь адрес своего Cloudflare Worker без слэша на конце ---
+        const BACKEND_URL = "https://icy-shape-e24a.nikita-tkachen2002.workers.dev";
 
         const submitBtn = document.getElementById('submitBtn');
         const urlInput = document.getElementById('urlInput');
@@ -155,20 +157,7 @@
             terminal.scrollTop = terminal.scrollHeight;
         }
 
-        function buildProxyUrl(proxyBase, targetUrl) {
-            try {
-                let urlObj = new URL(proxyBase);
-                urlObj.searchParams.set('url', targetUrl);
-                return urlObj.toString();
-            } catch (err) {
-                let base = proxyBase.trim();
-                base += base.includes('?') ? (base.endsWith('&') || base.endsWith('?') ? 'url=' : '&url=') : '/?url=';
-                return base + encodeURIComponent(targetUrl);
-            }
-        }
-
         submitBtn.addEventListener('click', async () => {
-            const pUrl = PROXY_URL_HIDDEN; 
             const targetUrl = urlInput.value.trim();
             if (!targetUrl) {
                 addLog("ERROR: TARGET URL IS EMPTY.");
@@ -187,47 +176,24 @@
             submitBtn.classList.add('opacity-50');
 
             try {
-                const fetchUrl = buildProxyUrl(pUrl, targetUrl);
-                addLog(`RESOLVING REDIRECTS & FETCHING PAYLOAD...`);
+                addLog(`SENDING REQUEST TO WORKER VIA SECURE POST...`);
                 
-                const response = await fetch(fetchUrl, { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
-                if (!response.ok) throw new Error(`PROXY REJECTED CONNECTION: ${response.status}`);
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: targetUrl })
+                });
 
-                addLog(`PAYLOAD RECEIVED. PARSING DATA...`);
-                const htmlText = await response.text();
-                const cleanHtml = htmlText.replace(/\\u002F/g, '/').replace(/\\\//g, '/');
-                
-                let mediaUrl = null;
+                const result = await response.json();
 
-                const mp4Matches = cleanHtml.match(/https:\/\/[^"'\s>]+\.mp4[^"'\s>]*/g);
-                
-                if (mp4Matches && mp4Matches.length > 0) {
-                    const uniqueMp4s = [...new Set(mp4Matches)];
-                    let bestVideo = uniqueMp4s.find(url => url.includes('1080p')) || uniqueMp4s.find(url => url.includes('720p')) || uniqueMp4s.find(url => url.includes('480p')) || uniqueMp4s[0];
-                    mediaUrl = bestVideo.split(/[\\]/)[0].split('?')[0];
-                    addLog(`SUCCESS: VIDEO STREAM ISOLATED.`);
-                } else {
-                    addLog(`FALLING BACK TO IMAGE EXTRACTION...`);
-                    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-                    const ogImage = doc.querySelector('meta[property="og:image"]');
-                    if (ogImage) {
-                        mediaUrl = ogImage.content.replace(/\/\d+x\//, '/originals/');
-                        addLog(`SUCCESS: HIGH-RES IMAGE LOCATED.`);
-                    } else {
-                        const imgMatches = cleanHtml.match(/https:\/\/[^"'\s>]+\.(jpg|jpeg|png)/gi);
-                        if (imgMatches && imgMatches.length > 0) {
-                            let bestImg = [...new Set(imgMatches)].find(url => url.includes('/originals/')) || [...new Set(imgMatches)][0];
-                            mediaUrl = bestImg.split(/[\\]/)[0].split('?')[0];
-                            addLog(`SUCCESS: RAW IMAGE LOCATED.`);
-                        }
-                    }
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || `SERVER ERROR: ${response.status}`);
                 }
 
-                if (!mediaUrl) throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
+                addLog(`SUCCESS: MEDIA URL ISOLATED.`);
+                addLog(`TARGET MEDIA URL: ${result.mediaUrl}`);
 
-                addLog(`TARGET MEDIA URL SECURED.`);
-                addLog(`READY FOR EXPORT.`);
-
+                // Создаем кнопку для скачивания файла прямо в интерфейсе
                 resultContainer.innerHTML = `
                     <button type="button" id="downloadBtn" class="w-full bg-matrix-green text-black font-bold py-3 px-6 uppercase tracking-widest shadow-neon hover:bg-white transition-all cursor-pointer text-center">
                         > ОТКРЫТЬ И СКАЧАТЬ ФАЙЛ <
@@ -237,9 +203,9 @@
 
                 document.getElementById('downloadBtn').addEventListener('click', () => {
                     if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
-                        window.Telegram.WebApp.openLink(mediaUrl);
+                        window.Telegram.WebApp.openLink(result.mediaUrl);
                     } else {
-                        window.open(mediaUrl, '_blank');
+                        window.open(result.mediaUrl, '_blank');
                     }
                 });
 
