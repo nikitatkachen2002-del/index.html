@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MATRIX PINTEREST EXTRACTOR</title>
     
-    <!-- Подключаем библиотеку Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -14,16 +13,11 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        mono: ['"Share Tech Mono"', 'monospace'],
-                    },
+                    fontFamily: { mono: ['"Share Tech Mono"', 'monospace'] },
                     colors: {
                         matrix: {
-                            black: '#000000',
-                            dark: '#051005',
-                            green: '#00FF41',
-                            light: '#b8ffd0',
-                            glow: 'rgba(0, 255, 65, 0.5)'
+                            black: '#000000', dark: '#051005', green: '#00FF41',
+                            light: '#b8ffd0', glow: 'rgba(0, 255, 65, 0.5)'
                         }
                     },
                     boxShadow: {
@@ -36,47 +30,22 @@
     </script>
     
     <style>
-        body {
-            background-color: #000;
-            color: #00FF41;
-            font-family: 'Share Tech Mono', monospace;
-            overflow-x: hidden;
-        }
-
-        #matrix-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-        }
-
+        body { background-color: #000; color: #00FF41; font-family: 'Share Tech Mono', monospace; overflow-x: hidden; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; }
         .terminal-scroll::-webkit-scrollbar { width: 8px; }
         .terminal-scroll::-webkit-scrollbar-track { background: rgba(0, 20, 0, 0.8); border-left: 1px solid #00FF41; }
         .terminal-scroll::-webkit-scrollbar-thumb { background: rgba(0, 255, 65, 0.3); }
         .terminal-scroll::-webkit-scrollbar-thumb:hover { background: #00FF41; }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus, 
-        input:-webkit-autofill:active{
+        input:-webkit-autofill {
             -webkit-box-shadow: 0 0 0 30px black inset !important;
             -webkit-text-fill-color: #00FF41 !important;
             transition: background-color 5000s ease-in-out 0s;
         }
-
-        .glitch-anim {
-            animation: textGlitch 2s infinite;
-        }
-
+        .glitch-anim { animation: textGlitch 2s infinite; }
         @keyframes textGlitch {
-            0% { opacity: 1; }
-            95% { opacity: 1; }
+            0%, 95%, 100% { opacity: 1; transform: translate(0, 0); }
             96% { opacity: 0.8; transform: translate(-2px, 1px); }
             97% { opacity: 0.9; transform: translate(2px, -1px); }
-            98% { opacity: 1; transform: translate(0, 0); }
-            100% { opacity: 1; }
         }
     </style>
 </head>
@@ -85,21 +54,16 @@
     <canvas id="matrix-canvas"></canvas>
 
     <main class="w-full max-w-4xl bg-matrix-black/80 backdrop-blur-sm border border-matrix-green shadow-neon p-6 flex flex-col gap-6 relative z-10">
-        
         <header class="border-b border-matrix-green/50 pb-4 text-center sm:text-left">
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: TELEGRAM_APP_MODE</p>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: TG_BOT_DELIVERY</p>
         </header>
 
         <form id="extractForm" class="flex flex-col gap-5">
-            
-            <!-- Поле ввода Proxy удалено. Пользователь видит только поле для ссылки Pinterest -->
             <div class="flex flex-col gap-2">
-                <label for="urlInput" class="text-sm font-bold tracking-widest text-matrix-light">
-                    > TARGET_PINTEREST_URL
-                </label>
+                <label for="urlInput" class="text-sm font-bold tracking-widest text-matrix-light">> TARGET_PINTEREST_URL</label>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <input type="url" id="urlInput" required
                         class="block w-full flex-1 px-4 py-3 bg-black border border-matrix-green text-matrix-green focus:outline-none focus:shadow-neon-strong transition-all"
@@ -122,71 +86,56 @@
                 <div class="text-matrix-green/70">> AWAITING TARGET PARAMETERS...</div>
             </div>
         </section>
-
     </main>
 
     <script>
-        // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
+        // Инициализация Telegram
         if (window.Telegram && window.Telegram.WebApp) {
-            const tg = window.Telegram.WebApp;
             try {
-                tg.expand();
-                tg.ready();
-            } catch (e) {
-                console.log("Telegram API неактивно в обычном браузере.");
-            }
+                window.Telegram.WebApp.expand();
+                window.Telegram.WebApp.ready();
+            } catch (e) { console.log("Браузерный режим"); }
         }
 
-        // Логика визуального эффекта "Матрицы"
+        // Анимация Матрицы
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
-
-        let width, height;
-        let columns;
+        let width, height, columns;
         const drops = [];
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split('');
 
         function initMatrix() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            
             const fontSize = window.innerWidth < 600 ? 12 : 16;
             columns = width / fontSize;
-            
             drops.length = 0;
-            for (let x = 0; x < columns; x++) {
-                drops[x] = Math.random() * -100;
-            }
+            for (let x = 0; x < columns; x++) drops[x] = Math.random() * -100;
             ctx.font = fontSize + 'px "Share Tech Mono"';
         }
 
         function drawMatrix() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, width, height);
-
             ctx.fillStyle = '#0F0';
-            
             const fontSize = window.innerWidth < 600 ? 12 : 16;
             ctx.font = fontSize + 'px "Share Tech Mono"';
-
             for (let i = 0; i < drops.length; i++) {
                 const text = chars[Math.floor(Math.random() * chars.length)];
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                if (drops[i] * fontSize > height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
+                if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
             }
         }
-
         initMatrix();
         window.addEventListener('resize', initMatrix);
         setInterval(drawMatrix, 33);
 
-        // --- НАСТРОЙКИ ПРИЛОЖЕНИЯ ---
-        // Скрываем прокси URL здесь. Пользователь его не видит.
+        // Настройки сети
         const PROXY_URL_HIDDEN = "https://throbbing-fire-14de.nikita-tkachen2002.workers.dev/";
+        
+        // ВАЖНО: Сюда мы впишем ссылку на Cloudflare Worker твоего бота
+        const BOT_BACKEND_URL = "https://ТВОЙ_АДРЕС_БОТА.workers.dev/send-media"; 
 
         const form = document.getElementById('extractForm');
         const urlInput = document.getElementById('urlInput');
@@ -196,7 +145,6 @@
         function addLog(message) {
             const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
             const line = document.createElement('div');
-            
             if (message.includes("ERROR") || message.includes("FAILED")) {
                 line.className = 'text-red-500 break-words';
                 line.innerHTML = `<span class="opacity-50">[${time}]</span> <span class="font-bold">!! ${message}</span>`;
@@ -207,7 +155,6 @@
                 line.className = 'text-matrix-green break-words';
                 line.innerHTML = `<span class="opacity-50">[${time}]</span> > ${message}`;
             }
-            
             terminal.appendChild(line);
             terminal.scrollTop = terminal.scrollHeight;
         }
@@ -219,42 +166,54 @@
                 return urlObj.toString();
             } catch (err) {
                 let base = proxyBase.trim();
-                if (!base.includes('?')) {
-                    if (!base.endsWith('/')) base += '/';
-                    base += '?url=';
-                } else {
-                    if (!base.endsWith('&') && !base.endsWith('?')) base += '&url=';
-                }
+                base += base.includes('?') ? (base.endsWith('&') || base.endsWith('?') ? 'url=' : '&url=') : '/?url=';
                 return base + encodeURIComponent(targetUrl);
             }
         }
 
-        async function triggerDownload(mediaUrl, activeProxy, isVideo) {
+        // Новая логика отправки данных боту
+        async function sendToTelegramBot(mediaUrl, isVideo) {
             try {
-                addLog(`TARGET MEDIA IS READY FOR EXPORT...`);
+                addLog(`PREPARING TELEGRAM BOT DELIVERY...`);
                 
-                if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
-                    addLog(`ROUTING TO EXTERNAL BROWSER VIA TELEGRAM API...`);
-                    window.Telegram.WebApp.openLink(mediaUrl);
-                } else {
-                    addLog(`ROUTING TO NEW TAB (BROWSER MODE)...`);
-                    window.open(mediaUrl, '_blank');
+                // Получаем ID пользователя, который открыл мини-апп
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                if (!tgUser || !tgUser.id) {
+                    throw new Error("TELEGRAM USER ID NOT DETECTED. ARE YOU IN THE APP?");
                 }
+
+                addLog(`ROUTING TO BOT SERVER FOR USER ID: ${tgUser.id}...`);
+
+                // Отправляем данные на сервер бота
+                const response = await fetch(BOT_BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: tgUser.id,
+                        media_url: mediaUrl,
+                        is_video: isVideo
+                    })
+                });
+
+                if (!response.ok) throw new Error("BOT SERVER DID NOT RESPOND CORRECTLY.");
+
+                addLog(`SUCCESS: BOT IS SENDING THE FILE TO YOUR CHAT.`);
                 
-                addLog(`SUCCESS: MEDIA OPENED. PLEASE SAVE IT MANUALLY.`);
+                // Закрываем мини-апп через 2 секунды после успеха
+                setTimeout(() => { window.Telegram.WebApp.close(); }, 2000);
 
             } catch (error) {
-                addLog(`EXPORT FAILED: ${error.message}`);
+                addLog(`BOT DELIVERY FAILED: ${error.message}`);
+                // Возврат к стандартному открытию ссылки, если сервер не сработал
+                addLog(`FALLBACK: ROUTING TO NEW TAB...`);
+                window.open(mediaUrl, '_blank');
             }
         }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Берем прокси из нашей скрытой переменной, а не из поля ввода
             const pUrl = PROXY_URL_HIDDEN; 
             const targetUrl = urlInput.value.trim();
-            
             if (!targetUrl) return;
 
             terminal.innerHTML = '';
@@ -269,16 +228,11 @@
                 const fetchUrl = buildProxyUrl(pUrl, targetUrl);
                 addLog(`FETCHING PAYLOAD VIA PROXY NODE...`);
                 
-                const response = await fetch(fetchUrl, {
-                    method: 'GET',
-                    headers: { 'Cache-Control': 'no-cache' }
-                });
-
+                const response = await fetch(fetchUrl, { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
                 if (!response.ok) throw new Error(`PROXY REJECTED CONNECTION: ${response.status}`);
 
                 addLog(`PAYLOAD RECEIVED. UNESCAPING JSON DATA...`);
                 const htmlText = await response.text();
-                
                 const cleanHtml = htmlText.replace(/\\u002F/g, '/').replace(/\\\//g, '/');
                 
                 let mediaUrl = null;
@@ -289,42 +243,31 @@
                 
                 if (mp4Matches && mp4Matches.length > 0) {
                     const uniqueMp4s = [...new Set(mp4Matches)];
-                    
-                    let bestVideo = uniqueMp4s.find(url => url.includes('1080p')) || 
-                                    uniqueMp4s.find(url => url.includes('720p')) || 
-                                    uniqueMp4s.find(url => url.includes('480p')) ||
-                                    uniqueMp4s[0];
-                                    
+                    let bestVideo = uniqueMp4s.find(url => url.includes('1080p')) || uniqueMp4s.find(url => url.includes('720p')) || uniqueMp4s.find(url => url.includes('480p')) || uniqueMp4s[0];
                     mediaUrl = bestVideo.split(/[\\]/)[0].split('?')[0];
                     isVideo = true;
                     addLog(`SUCCESS: VIDEO STREAM ISOLATED.`);
                 } else {
                     addLog(`NO VIDEO FOUND. FALLING BACK TO IMAGE EXTRACTION...`);
-                    
                     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
                     const ogImage = doc.querySelector('meta[property="og:image"]');
-                    
                     if (ogImage) {
                         mediaUrl = ogImage.content.replace(/\/\d+x\//, '/originals/');
                         addLog(`SUCCESS: HIGH-RES IMAGE LOCATED.`);
                     } else {
                         const imgMatches = cleanHtml.match(/https:\/\/[^"'\s>]+\.(jpg|jpeg|png)/gi);
                         if (imgMatches && imgMatches.length > 0) {
-                            const uniqueImgs = [...new Set(imgMatches)];
-                            let bestImg = uniqueImgs.find(url => url.includes('/originals/')) || uniqueImgs[0];
+                            let bestImg = [...new Set(imgMatches)].find(url => url.includes('/originals/')) || [...new Set(imgMatches)][0];
                             mediaUrl = bestImg.split(/[\\]/)[0].split('?')[0];
                             addLog(`SUCCESS: RAW IMAGE LOCATED.`);
                         }
                     }
                 }
 
-                if (!mediaUrl) {
-                    throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
-                }
+                if (!mediaUrl) throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
 
-                addLog(`TARGET MEDIA URL: ${mediaUrl}`);
-                
-                await triggerDownload(mediaUrl, pUrl, isVideo);
+                // Запускаем функцию отправки боту
+                await sendToTelegramBot(mediaUrl, isVideo);
 
             } catch (error) {
                 addLog(`CRITICAL ERROR: ${error.message}`);
