@@ -58,7 +58,7 @@
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: TG_BOT_DELIVERY</p>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: TG_NATIVE_BRIDGE</p>
         </header>
 
         <form id="extractForm" class="flex flex-col gap-5">
@@ -83,7 +83,7 @@
             </div>
             <div id="terminal" class="flex-1 overflow-y-auto terminal-scroll text-xs sm:text-sm p-4 space-y-1">
                 <div class="text-matrix-green/70">> SYSTEM INITIALIZED...</div>
-                <div class="text-matrix-green/70">> AWAITING TARGET PARAMETERS...</div>
+                <div class="text-matrix-green/70">> NATIVE BRIDGE READY...</div>
             </div>
         </section>
     </main>
@@ -129,11 +129,6 @@
         window.addEventListener('resize', initMatrix);
         setInterval(drawMatrix, 33);
 
-        const PROXY_URL_HIDDEN = "https://icy-shape-e24a.nikita-tkachen2002.workers.dev";
-        
-        // Вставь сюда ссылку на твой Cloudflare Worker (без слеша на конце)
-        const BOT_BACKEND_URL = "https://icy-shape-e24a.nikita-tkachen2002.workers.dev"; 
-
         const form = document.getElementById('extractForm');
         const urlInput = document.getElementById('urlInput');
         const submitBtn = document.getElementById('submitBtn');
@@ -156,62 +151,8 @@
             terminal.scrollTop = terminal.scrollHeight;
         }
 
-        function buildProxyUrl(proxyBase, targetUrl) {
-            try {
-                let urlObj = new URL(proxyBase);
-                urlObj.searchParams.set('url', targetUrl);
-                return urlObj.toString();
-            } catch (err) {
-                let base = proxyBase.trim();
-                base += base.includes('?') ? (base.endsWith('&') || base.endsWith('?') ? 'url=' : '&url=') : '/?url=';
-                return base + encodeURIComponent(targetUrl);
-            }
-        }
-
-        // Функция отправки ссылки на бэкенд бота
-        async function sendToTelegramBot(mediaUrl, isVideo) {
-            try {
-                addLog(`SENDING MEDIA TO TELEGRAM BOT SERVER...`);
-                
-                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-                if (!tgUser || !tgUser.id) {
-                    throw new Error("TELEGRAM USER ID NOT DETECTED. OPEN INSIDE TELEGRAM!");
-                }
-
-                addLog(`TARGET CHAT ID: ${tgUser.id}`);
-
-                const response = await fetch(BOT_BACKEND_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: tgUser.id,
-                        media_url: mediaUrl,
-                        is_video: isVideo
-                    })
-                });
-
-                const result = await response.json();
-                if (!result.success) {
-                    throw new Error(result.error || "Server rejected request");
-                }
-
-                addLog(`SUCCESS: FILE SENT TO YOUR TELEGRAM BOT!`);
-                
-                // Закрываем мини-апп через 2 секунды после успеха
-                setTimeout(() => { 
-                    if (window.Telegram?.WebApp?.close) {
-                        window.Telegram.WebApp.close(); 
-                    }
-                }, 2000);
-
-            } catch (error) {
-                addLog(`BOT DELIVERY FAILED: ${error.message}`);
-            }
-        }
-
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const pUrl = PROXY_URL_HIDDEN; 
             const targetUrl = urlInput.value.trim();
             if (!targetUrl) return;
 
@@ -224,50 +165,20 @@
             submitBtn.classList.add('opacity-50');
 
             try {
-                const fetchUrl = buildProxyUrl(pUrl, targetUrl);
-                addLog(`FETCHING PAYLOAD VIA PROXY NODE...`);
-                
-                const response = await fetch(fetchUrl, { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
-                if (!response.ok) throw new Error(`PROXY REJECTED CONNECTION: ${response.status}`);
+                addLog(`ENCODING PAYLOAD FOR TELEGRAM BRIDGE...`);
 
-                addLog(`PAYLOAD RECEIVED. PARSING DATA...`);
-                const htmlText = await response.text();
-                const cleanHtml = htmlText.replace(/\\u002F/g, '/').replace(/\\\//g, '/');
-                
-                let mediaUrl = null;
-                let isVideo = false;
-
-                const mp4Matches = cleanHtml.match(/https:\/\/[^"'\s>]+\.mp4[^"'\s>]*/g);
-                
-                if (mp4Matches && mp4Matches.length > 0) {
-                    const uniqueMp4s = [...new Set(mp4Matches)];
-                    let bestVideo = uniqueMp4s.find(url => url.includes('1080p')) || uniqueMp4s.find(url => url.includes('720p')) || uniqueMp4s.find(url => url.includes('480p')) || uniqueMp4s[0];
-                    mediaUrl = bestVideo.split(/[\\]/)[0].split('?')[0];
-                    isVideo = true;
-                    addLog(`SUCCESS: VIDEO STREAM ISOLATED.`);
+                // Проверяем, запущен ли сайт внутри Telegram
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
+                    // Передаем ссылку боту нативно без всяких fetch-запросов
+                    window.Telegram.WebApp.sendData(targetUrl);
+                    addLog(`SUCCESS: LINK SENT TO BOT CHAT! CLOSING APP...`);
+                    
+                    setTimeout(() => {
+                        window.Telegram.WebApp.close();
+                    }, 1500);
                 } else {
-                    addLog(`FALLING BACK TO IMAGE EXTRACTION...`);
-                    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-                    const ogImage = doc.querySelector('meta[property="og:image"]');
-                    if (ogImage) {
-                        mediaUrl = ogImage.content.replace(/\/\d+x\//, '/originals/');
-                        addLog(`SUCCESS: HIGH-RES IMAGE LOCATED.`);
-                    } else {
-                        const imgMatches = cleanHtml.match(/https:\/\/[^"'\s>]+\.(jpg|jpeg|png)/gi);
-                        if (imgMatches && imgMatches.length > 0) {
-                            let bestImg = [...new Set(imgMatches)].find(url => url.includes('/originals/')) || [...new Set(imgMatches)][0];
-                            mediaUrl = bestImg.split(/[\\]/)[0].split('?')[0];
-                            addLog(`SUCCESS: RAW IMAGE LOCATED.`);
-                        }
-                    }
+                    throw new Error("NOT IN TELEGRAM ENVIRONMENT. OPEN VIA BOT BUTTON.");
                 }
-
-                if (!mediaUrl) throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
-
-                addLog(`TARGET MEDIA URL: ${mediaUrl}`);
-                
-                // Передаем ссылку на сервер бота вместо открытия вкладки
-                await sendToTelegramBot(mediaUrl, isVideo);
 
             } catch (error) {
                 addLog(`CRITICAL ERROR: ${error.message}`);
