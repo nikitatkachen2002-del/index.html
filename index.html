@@ -58,10 +58,11 @@
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: SAFE_DIRECT_OPEN</p>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: NO_CLOSE_STABLE_MODE</p>
         </header>
 
-        <form id="extractForm" class="flex flex-col gap-5">
+        <!-- Заменили тег <form> на обычный блок, чтобы исключить случайное закрытие -->
+        <div id="extractForm" class="flex flex-col gap-5">
             <div class="flex flex-col gap-2">
                 <label for="urlInput" class="text-sm font-bold tracking-widest text-matrix-light">> TARGET_PINTEREST_URL</label>
                 <div class="flex flex-col sm:flex-row gap-4">
@@ -69,12 +70,15 @@
                         class="block w-full flex-1 px-4 py-3 bg-black border border-matrix-green text-matrix-green focus:outline-none focus:shadow-neon-strong transition-all"
                         placeholder="https://pin.it/..." autocomplete="off">
                     
-                    <button type="submit" id="submitBtn" class="bg-black border border-matrix-green text-matrix-green hover:bg-matrix-green hover:text-black font-bold py-3 px-8 transition-all shadow-neon whitespace-nowrap uppercase tracking-widest cursor-pointer">
+                    <button type="button" id="submitBtn" class="bg-black border border-matrix-green text-matrix-green hover:bg-matrix-green hover:text-black font-bold py-3 px-8 transition-all shadow-neon whitespace-nowrap uppercase tracking-widest cursor-pointer">
                         INITIATE_EXTRACTION
                     </button>
                 </div>
             </div>
-        </form>
+        </div>
+
+        <!-- Контейнер для динамической кнопки скачивания -->
+        <div id="resultContainer" class="hidden flex flex-col gap-2"></div>
 
         <section class="flex flex-col border border-matrix-green h-64 sm:h-80 bg-black/90 relative">
             <div class="flex items-center justify-between px-4 py-2 border-b border-matrix-green/50 bg-matrix-green/10">
@@ -131,10 +135,10 @@
 
         const PROXY_URL_HIDDEN = "https://icy-shape-e24a.nikita-tkachen2002.workers.dev";
 
-        const form = document.getElementById('extractForm');
-        const urlInput = document.getElementById('urlInput');
         const submitBtn = document.getElementById('submitBtn');
+        const urlInput = document.getElementById('urlInput');
         const terminal = document.getElementById('terminal');
+        const resultContainer = document.getElementById('resultContainer');
 
         function addLog(message) {
             const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -165,13 +169,19 @@
             }
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Обработчик клика по обычной кнопке (вместо submit у формы)
+        submitBtn.addEventListener('click', async () => {
             const pUrl = PROXY_URL_HIDDEN; 
             const targetUrl = urlInput.value.trim();
-            if (!targetUrl) return;
+            if (!targetUrl) {
+                addLog("ERROR: TARGET URL IS EMPTY.");
+                return;
+            }
 
             terminal.innerHTML = '';
+            resultContainer.innerHTML = '';
+            resultContainer.classList.add('hidden');
+
             addLog(`SYSTEM WAKE. TARGET: ${targetUrl}`);
             
             const origBtnText = submitBtn.innerHTML;
@@ -218,17 +228,24 @@
 
                 if (!mediaUrl) throw new Error("NO MEDIA DETECTED IN PAYLOAD.");
 
-                addLog(`TARGET MEDIA URL: ${mediaUrl}`);
-                addLog(`OPENING MEDIA IN EXTERNAL BROWSER...`);
+                addLog(`TARGET MEDIA URL SECURED.`);
+                addLog(`READY FOR EXPORT.`);
 
-                // Безопасно открываем найденную ссылку через Telegram API в браузере телефона
-                if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
-                    window.Telegram.WebApp.openLink(mediaUrl);
-                } else {
-                    window.open(mediaUrl, '_blank');
-                }
+                // Рисуем кнопку прямо в интерфейсе
+                resultContainer.innerHTML = `
+                    <button type="button" id="downloadBtn" class="w-full bg-matrix-green text-black font-bold py-3 px-6 uppercase tracking-widest shadow-neon hover:bg-white transition-all cursor-pointer text-center">
+                        > ОТКРЫТЬ И СКАЧАТЬ ФАЙЛ <
+                    </button>
+                `;
+                resultContainer.classList.remove('hidden');
 
-                addLog(`SUCCESS: FILE READY FOR DOWNLOAD.`);
+                document.getElementById('downloadBtn').addEventListener('click', () => {
+                    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
+                        window.Telegram.WebApp.openLink(mediaUrl);
+                    } else {
+                        window.open(mediaUrl, '_blank');
+                    }
+                });
 
             } catch (error) {
                 addLog(`CRITICAL ERROR: ${error.message}`);
