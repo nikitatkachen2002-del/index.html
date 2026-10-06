@@ -58,7 +58,7 @@
             <h1 class="text-2xl sm:text-4xl font-bold tracking-widest glitch-anim drop-shadow-[0_0_5px_rgba(0,255,65,0.8)]">
                 MATRIX PINTEREST EXTRACTOR
             </h1>
-            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: ULTIMATE_STABLE_EDITION</p>
+            <p class="text-matrix-green/70 text-sm mt-2">SYSTEM.PROTOCOL: BOT_CHAT_DELIVERY</p>
         </header>
 
         <div id="extractForm" class="flex flex-col gap-5">
@@ -75,9 +75,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Контейнер для появления кнопки скачивания -->
-        <div id="resultContainer" class="hidden flex flex-col gap-2"></div>
 
         <section class="flex flex-col border border-matrix-green h-64 sm:h-80 bg-black/90 relative">
             <div class="flex items-center justify-between px-4 py-2 border-b border-matrix-green/50 bg-matrix-green/10">
@@ -132,13 +129,12 @@
         window.addEventListener('resize', initMatrix);
         setInterval(drawMatrix, 33);
 
-        // --- ВАЖНО: Укажи здесь адрес своего Cloudflare Worker без слэша на конце ---
+        // --- УКАЖИ ЗДЕСЬ АДРЕС СВОЕГО CLOUDFLARE WORKER БЕЗ СЛЭША НА КОНЦЕ ---
         const BACKEND_URL = "https://icy-shape-e24a.nikita-tkachen2002.workers.dev";
 
         const submitBtn = document.getElementById('submitBtn');
         const urlInput = document.getElementById('urlInput');
         const terminal = document.getElementById('terminal');
-        const resultContainer = document.getElementById('resultContainer');
 
         function addLog(message) {
             const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -165,9 +161,6 @@
             }
 
             terminal.innerHTML = '';
-            resultContainer.innerHTML = '';
-            resultContainer.classList.add('hidden');
-
             addLog(`SYSTEM WAKE. TARGET: ${targetUrl}`);
             
             const origBtnText = submitBtn.innerHTML;
@@ -176,12 +169,25 @@
             submitBtn.classList.add('opacity-50');
 
             try {
-                addLog(`SENDING REQUEST TO WORKER VIA SECURE POST...`);
+                // Получаем ID пользователя Telegram для отправки сообщения в чат
+                const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                const chatId = tgUser ? tgUser.id : null;
+
+                if (!chatId) {
+                    addLog(`WARNING: CHAT ID NOT FOUND. RUN INSIDE TELEGRAM BOT!`);
+                } else {
+                    addLog(`DETECTED CHAT ID: ${chatId}`);
+                }
+
+                addLog(`SENDING REQUEST TO WORKER...`);
                 
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: targetUrl })
+                    body: JSON.stringify({ 
+                        url: targetUrl,
+                        chat_id: chatId 
+                    })
                 });
 
                 const result = await response.json();
@@ -190,24 +196,15 @@
                     throw new Error(result.error || `SERVER ERROR: ${response.status}`);
                 }
 
-                addLog(`SUCCESS: MEDIA URL ISOLATED.`);
-                addLog(`TARGET MEDIA URL: ${result.mediaUrl}`);
+                addLog(`SUCCESS: MEDIA LINK ISOLATED.`);
+                addLog(`SENT TO YOUR TELEGRAM CHAT! CLOSING...`);
 
-                // Создаем кнопку для скачивания файла прямо в интерфейсе
-                resultContainer.innerHTML = `
-                    <button type="button" id="downloadBtn" class="w-full bg-matrix-green text-black font-bold py-3 px-6 uppercase tracking-widest shadow-neon hover:bg-white transition-all cursor-pointer text-center">
-                        > ОТКРЫТЬ И СКАЧАТЬ ФАЙЛ <
-                    </button>
-                `;
-                resultContainer.classList.remove('hidden');
-
-                document.getElementById('downloadBtn').addEventListener('click', () => {
-                    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
-                        window.Telegram.WebApp.openLink(result.mediaUrl);
-                    } else {
-                        window.open(result.mediaUrl, '_blank');
+                // Закрываем мини-апп через 1.5 секунды после успешной отправки в чат
+                setTimeout(() => {
+                    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.close === 'function') {
+                        window.Telegram.WebApp.close();
                     }
-                });
+                }, 1500);
 
             } catch (error) {
                 addLog(`CRITICAL ERROR: ${error.message}`);
